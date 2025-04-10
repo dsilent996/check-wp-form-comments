@@ -6,11 +6,15 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 import os
 import uuid
+import urllib3
+
+# Menonaktifkan warning SSL
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def check_comment_form(url):
     try:
         headers = {'User-Agent': 'Mozilla/5.0'}
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=10, verify=False)  # Tambahkan verify=False
         
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
@@ -47,7 +51,6 @@ def process_excel(file_path, output_folder):
     st.write(f"Memproses {len(df)} URL dengan multi-threading...")
     df['Status Form Komentar'] = process_urls_parallel(df['URL'].tolist())
     
-    # Buat file hasil unik dengan UUID
     output_file = os.path.join(output_folder, f"hasil_pengecekan_{uuid.uuid4().hex}.xlsx")
     df.to_excel(output_file, index=False)
     
@@ -66,7 +69,6 @@ def main():
     os.makedirs(output_folder, exist_ok=True)
     
     if uploaded_file is not None:
-        # Hapus file lama sebelum membuat file baru
         for f in os.listdir(output_folder):
             file_path = os.path.join(output_folder, f)
             if os.path.isfile(file_path):
@@ -82,7 +84,6 @@ def main():
                 with open(output_file, "rb") as f:
                     st.download_button("Unduh Hasil", f, file_name="hasil_pengecekan.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 
-                # Hapus file hasil setelah download
                 os.remove(output_file)
                 os.remove(file_path)
 
